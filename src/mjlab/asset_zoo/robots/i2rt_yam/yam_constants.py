@@ -155,7 +155,7 @@ HOME_KEYFRAME = EntityCfg.InitialStateCfg(
     "joint3": 1.05,
     "joint4": -0.9,
     "left_finger": 0.0475 / 2,
-    "right_finger": -0.0475 / 2,
+    "right_finger": 0.0475 / 2,
   },
   joint_vel={".*": 0.0},
 )
@@ -167,44 +167,44 @@ HOME_KEYFRAME = EntityCfg.InitialStateCfg(
 FULL_COLLISION = CollisionCfg(
   geom_names_expr=(".*_collision",),
   condim={
-    "[lr]f_down(6|7|8|9|10|11)_collision": 6,
+    "tip_[lr]_\\d+_collision": 6,
     ".*_collision": 3,
   },
   friction={
-    "[lr]f_down(6|7|8|9|10|11)_collision": (1, 5e-3, 5e-4),
+    "tip_[lr]_\\d+_collision": (1, 5e-3, 5e-4),
     ".*_collision": (0.6,),
   },
   solref={
-    "[lr]f_down(6|7|8|9|10|11)_collision": (0.01, 1),
+    "tip_[lr]_\\d+_collision": (0.01, 1),
   },
   priority={
-    "[lr]f_down(6|7|8|9|10|11)_collision": 1,
+    "tip_[lr]_\\d+_collision": 1,
   },
 )
 
 GRIPPER_ONLY_COLLISION = CollisionCfg(
   geom_names_expr=(".*_collision",),
   contype={
-    "(link6|[lr]f)_.*_collision": 1,
+    "(link6|gripper|tip)_.*_collision": 1,
     ".*_collision": 0,
   },
   conaffinity={
-    "(link6|[lr]f)_.*_collision": 1,
+    "(link6|gripper|tip)_.*_collision": 1,
     ".*_collision": 0,
   },
   condim={
-    "[lr]f_down(6|7|8|9|10|11)_collision": 6,
+    "tip_[lr]_\\d+_collision": 6,
     ".*_collision": 3,
   },
   friction={
-    "[lr]f_down(6|7|8|9|10|11)_collision": (1, 5e-3, 5e-4),
+    "tip_[lr]_\\d+_collision": (1, 5e-3, 5e-4),
     ".*_collision": (0.6,),
   },
   solref={
-    "[lr]f_down(6|7|8|9|10|11)_collision": (0.01, 1),
+    "tip_[lr]_\\d+_collision": (0.01, 1),
   },
   priority={
-    "[lr]f_down(6|7|8|9|10|11)_collision": 1,
+    "tip_[lr]_\\d+_collision": 1,
   },
 )
 
