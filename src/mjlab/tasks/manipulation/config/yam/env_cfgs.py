@@ -15,11 +15,11 @@ from mjlab.managers import (
   ObservationTermCfg,
 )
 from mjlab.managers.event_manager import EventTermCfg
-from mjlab.utils.noise.noise_cfg import GaussianNoiseCfg
 from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import CameraSensorCfg, ContactSensorCfg
 from mjlab.tasks.manipulation import mdp as manipulation_mdp
 from mjlab.tasks.manipulation.lift_cube_env_cfg import make_lift_cube_env_cfg
+from mjlab.utils.noise.noise_cfg import GaussianNoiseCfg
 
 
 def get_cube_spec(cube_size: float = 0.02, mass: float = 0.05) -> mujoco.MjSpec:
