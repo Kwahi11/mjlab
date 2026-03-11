@@ -19,6 +19,7 @@ from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import CameraSensorCfg, ContactSensorCfg
 from mjlab.tasks.manipulation import mdp as manipulation_mdp
 from mjlab.tasks.manipulation.lift_cube_env_cfg import make_lift_cube_env_cfg
+from mjlab.utils.noise import DepthAugmentationCfg
 
 
 def get_cube_spec(cube_size: float = 0.02, mass: float = 0.05) -> mujoco.MjSpec:
@@ -120,12 +121,19 @@ def yam_lift_cube_vision_env_cfg(
       func = manipulation_mdp.camera_depth
     else:
       func = manipulation_mdp.camera_rgb
+    noise = None
+    if cam_type == "depth":
+      noise = DepthAugmentationCfg(
+        noise_std=0.01,
+        dropout_ratio=0.01,
+        max_shift_pixels=4,
+      )
     cam_terms[f"{cam_name.split('/')[-1]}_{cam_type}"] = ObservationTermCfg(
-      func=func, params=param_kwargs
+      func=func, params=param_kwargs, noise=noise
     )
 
   camera_obs = ObservationGroupCfg(
-    terms=cam_terms, enable_corruption=not play, concatenate_terms=True
+    terms=cam_terms, enable_corruption=True, concatenate_terms=True
   )
   cfg.observations["camera"] = camera_obs
 

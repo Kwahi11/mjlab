@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import mujoco
 import numpy as np
@@ -21,11 +21,13 @@ class ViserCameraViewer:
     server: viser.ViserServer,
     camera_sensor: CameraSensor,
     mj_model: mujoco.MjModel,
+    env: Any = None,
     min_display_size: int = 128,
   ):
     self._server = server
     self._camera_sensor = camera_sensor
     self._mj_model = mj_model
+    self._env = env
 
     self._rgb_handle: viser.GuiImageHandle | None = None
     self._depth_handle: viser.GuiImageHandle | None = None
@@ -36,6 +38,14 @@ class ViserCameraViewer:
 
     self._has_rgb = "rgb" in self._camera_sensor.cfg.data_types
     self._has_depth = "depth" in self._camera_sensor.cfg.data_types
+
+    # Check if the observation manager has a "camera" group we can
+    # read the policy's processed observation from.
+    self._has_camera_obs = (
+      env is not None
+      and hasattr(env.unwrapped, "observation_manager")
+      and "camera" in env.unwrapped.observation_manager.cfg
+    )
 
     height = self._camera_sensor.cfg.height
     width = self._camera_sensor.cfg.width
@@ -60,6 +70,11 @@ class ViserCameraViewer:
         step=0.1,
         initial_value=1.0,
       )
+      if self._has_camera_obs:
+        self._show_policy_view_toggle = self._server.gui.add_checkbox(
+          label="Show Policy View",
+          initial_value=False,
+        )
       self._depth_handle = self._server.gui.add_image(
         image=np.zeros((self._display_height, self._display_width, 3), dtype=np.uint8),
         label=f"{self._camera_name}_depth",
@@ -89,11 +104,11 @@ class ViserCameraViewer:
     # Get camera pose from simulation data
     cam_id = self._camera_idx
     cam_pos = sim_data.cam_xpos[env_idx, cam_id].cpu().numpy() + scene_offset
-    cam_mat = sim_data.cam_xmat[env_idx, cam_id].cpu().numpy().reshape(3, 3)  # [3, 3]
+    cam_mat = sim_data.cam_xmat[env_idx, cam_id].cpu().numpy().reshape(3, 3)
 
     # Convert rotation matrix to quaternion (wxyz format for viser)
-    # MuJoCo camera looks along -Z axis, viser frustum expects looking along +Z
-    # So we need to rotate 180 degrees around X axis
+    # MuJoCo camera looks along -Z axis, viser frustum expects looking
+    # along +Z so we need to rotate 180 degrees around X axis
     rot_180_x = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
     cam_mat_adjusted = cam_mat @ rot_180_x
 
@@ -117,7 +132,10 @@ class ViserCameraViewer:
     return np.repeat(np.repeat(image, scale, axis=0), scale, axis=1)
 
   def update(
-    self, sim_data, env_idx: int = 0, scene_offset: np.ndarray | None = None
+    self,
+    sim_data,
+    env_idx: int = 0,
+    scene_offset: np.ndarray | None = None,
   ) -> None:
     data = self._camera_sensor.data
 
@@ -132,11 +150,20 @@ class ViserCameraViewer:
       self._rgb_handle.image = rgb_np
 
     if self._has_depth and self._depth_handle is not None and data.depth is not None:
-      depth_np = data.depth[env_idx].squeeze().cpu().numpy()
+      show_policy = self._has_camera_obs and self._show_policy_view_toggle.value
 
-      depth_scale = max(self._depth_scale_slider.value, 0.01)
-      depth_normalized = np.clip(depth_np / depth_scale, 0.0, 1.0)
-      depth_uint8 = (depth_normalized * 255).astype(np.uint8)
+      if show_policy:
+        # Read the already-computed observation from the obs manager.
+        obs_mgr = self._env.unwrapped.observation_manager
+        camera_obs = obs_mgr.compute()["camera"]
+        # (B, 1, H, W) or (B, C, H, W) — take first channel.
+        depth_np = camera_obs[env_idx, 0].cpu().numpy()
+      else:
+        depth_scale = max(self._depth_scale_slider.value, 0.01)
+        depth_np = data.depth[env_idx].squeeze().cpu().numpy()
+        depth_np = np.clip(depth_np / depth_scale, 0.0, 1.0)
+
+      depth_uint8 = (depth_np * 255).astype(np.uint8)
       if self._needs_upsampling:
         scale = self._display_height // depth_uint8.shape[0]
         depth_uint8 = self._upsample_nearest(depth_uint8, scale)
@@ -153,6 +180,8 @@ class ViserCameraViewer:
     if self._depth_handle is not None:
       self._depth_handle.remove()
       self._depth_scale_slider.remove()
+      if self._has_camera_obs:
+        self._show_policy_view_toggle.remove()
     if self._frustum_handle is not None:
       self._frustum_handle.remove()
     self._show_frustum_toggle.remove()

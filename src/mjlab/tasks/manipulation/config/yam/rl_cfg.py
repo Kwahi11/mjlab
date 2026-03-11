@@ -66,12 +66,10 @@ def yam_lift_cube_vision_ppo_runner_cfg() -> RslRlOnPolicyRunnerCfg:
       class_name=class_name,
     ),
     critic=RslRlModelCfg(
-      hidden_dims=(256, 256, 128),
+      hidden_dims=(512, 256, 128),
       activation="elu",
       obs_normalization=True,
       stochastic=False,
-      cnn_cfg=cnn_cfg,
-      class_name=class_name,
     ),
     algorithm=RslRlPpoAlgorithmCfg(
       value_loss_coef=1.0,
@@ -93,6 +91,6 @@ def yam_lift_cube_vision_ppo_runner_cfg() -> RslRlOnPolicyRunnerCfg:
     max_iterations=3_000,
     obs_groups={
       "actor": ("actor", "camera"),
-      "critic": ("critic", "camera"),
+      "critic": ("critic",),
     },
   )
