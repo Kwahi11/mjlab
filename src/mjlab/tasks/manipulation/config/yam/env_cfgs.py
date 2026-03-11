@@ -132,20 +132,25 @@ def yam_lift_cube_vision_env_cfg(
   )
   cfg.observations["camera"] = camera_obs
 
-  # Camera intrinsic DR: focal length variation across D405 units (±0.004 from mean).
+  # Camera domain randomization calibrated to real D405 measurements. Intrinsics are
+  # defined at native 1280x720 and scale automatically to the training resolution
+  # (64x36). The 1e-3 convention maps 1 native pixel to 0.001 in sensor units.
   cam_asset_cfg = SceneEntityCfg("robot", camera_names=("camera_d405",))
+  # ±5% focal length (covers resolution-dependent FOV variation).
   cfg.events["camera_focal"] = EventTermCfg(
     func=dr.cam_intrinsic,
     mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
-      "operation": "add",
+      "operation": "scale",
       "distribution": "uniform",
       "axes": [0, 1],
-      "ranges": (-0.008, 0.008),
+      "ranges": (0.95, 1.05),
     },
   )
-  # Camera intrinsic DR: principal point variation across D405 units.
+  # ±5 native px principal point offset (≈0.25 px at 64x36).
+  # 5 px in sensor units: 5 * sensorsize / resolution.
+  # x: 5 * 0.003896 / 1280 ≈ 1.5e-5, y: 5 * 0.00214 / 720 ≈ 1.5e-5.
   cfg.events["camera_principal"] = EventTermCfg(
     func=dr.cam_intrinsic,
     mode="reset",
@@ -154,10 +159,10 @@ def yam_lift_cube_vision_env_cfg(
       "operation": "add",
       "distribution": "uniform",
       "axes": [2, 3],
-      "ranges": (-0.009, 0.009),
+      "ranges": (-1.5e-5, 1.5e-5),
     },
   )
-  # Camera pose DR: compensate CAD-to-XML mounting errors.
+  # ±10 mm position (real mount differed by ~15 mm but ±20 mm clips geometry).
   cfg.events["camera_pos"] = EventTermCfg(
     func=dr.cam_pos,
     mode="reset",
@@ -165,17 +170,18 @@ def yam_lift_cube_vision_env_cfg(
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
       "distribution": "uniform",
-      "ranges": (-0.005, 0.005),
+      "ranges": (-0.01, 0.01),
     },
   )
+  # ±5° per axis (real mount differed by ~5-8° from CAD).
   cfg.events["camera_quat"] = EventTermCfg(
     func=dr.cam_quat,
     mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
-      "roll_range": (-0.05, 0.05),
-      "pitch_range": (-0.05, 0.05),
-      "yaw_range": (-0.05, 0.05),
+      "roll_range": (-0.087, 0.087),
+      "pitch_range": (-0.087, 0.087),
+      "yaw_range": (-0.087, 0.087),
     },
   )
 
