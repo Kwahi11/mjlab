@@ -102,7 +102,7 @@ def yam_lift_cube_vision_env_cfg(
     data_types=(cam_type,),
     enabled_geom_groups=(0, 3),
     use_shadows=False,
-    use_textures=True,
+    use_textures=cam_type == "rgb",
   )
 
   cam_terms = {}
@@ -121,10 +121,8 @@ def yam_lift_cube_vision_env_cfg(
       func = manipulation_mdp.camera_depth
     else:
       func = manipulation_mdp.camera_rgb
-    # Additive Gaussian noise on depth (~5mm at 0.5m cutoff).
-    noise = GaussianNoiseCfg(std=0.01) if cam_type == "depth" else None
     cam_terms[f"{cam_name.split('/')[-1]}_{cam_type}"] = ObservationTermCfg(
-      func=func, params=param_kwargs, noise=noise
+      func=func, params=param_kwargs
     )
 
   camera_obs = ObservationGroupCfg(

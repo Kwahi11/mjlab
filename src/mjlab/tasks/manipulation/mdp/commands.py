@@ -149,7 +149,7 @@ class LiftingCommandCfg(CommandTermCfg):
 
   @dataclass
   class VizCfg:
-    target_color: tuple[float, float, float, float] = (1.0, 0.5, 0.0, 0.3)
+    target_color: tuple[float, float, float, float] = (1.0, 0.5, 0.0, 0.1)
 
   viz: VizCfg = field(default_factory=VizCfg)
 
