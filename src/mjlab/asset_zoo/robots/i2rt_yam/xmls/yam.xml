@@ -129,6 +129,14 @@
                     pos="-0.014 -0.0463995 0.0731" rgba="0.6 0.2 1.0 1"/>
                   <site name="tcp_site" quat="0 1 0 0" size="0.005" rgba="1 0 0 1"/>
                   <site name="grasp_site" pos="0 0 -0.1347" quat="0 1 0 0" size="0.005" rgba="0 1 0 1"/>
+                  <body name="camera_d405" pos="-0.079729 0.0107 -0.066021" quat="0.2126311 -0.6743797 0.6743797 -0.2126311">
+                    <geom class="visual" mesh="camera_d405"/>
+                    <geom class="collision" type="box" size=".018 .018 .01" pos="0 0 -0.01" group="4"/>
+                    <body name="camera_frame" pos="0.009 0 0" quat="0 0 0 1">
+                      <camera name="camera_d405" pos="0 0 0" quat="0 1 0 0" resolution="1280 720"
+                        sensorsize="0.003896 0.00214" focal="0.00193 0.00193"/>
+                    </body>
+                  </body>
                   <body name="tip_left" pos="-0.0238981 0.0450619 -0.0545599" quat="0.499998 -0.5 -0.5 -0.500002">
                     <inertial pos="-0.0224716 0.0143408 -0.0426253" quat="0.498899 0.455348 -0.0576406 0.735143"
                       mass="0.0710042" diaginertia="6.24193e-05 6.01079e-05 2.83591e-05"/>
