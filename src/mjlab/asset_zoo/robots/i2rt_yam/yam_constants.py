@@ -69,8 +69,8 @@ DM_4310 = ElectricActuator(
   effort_limit=10.0,
 )
 
-NATURAL_FREQ = 2 * 2.0 * 3.1415926535  # 2Hz
-DAMPING_RATIO = 2.0
+NATURAL_FREQ = 1.5 * 2.0 * 3.1415926535  # 1.5 Hz
+DAMPING_RATIO = 1.0
 
 # Per-joint PD gains using effective inertia, and actuator configs.
 _ARM_JOINTS: dict[str, ElectricActuator] = {
