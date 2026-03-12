@@ -137,6 +137,9 @@
                     <body name="camera_frame" pos="0.009 0 0" quat="0 0 0 1">
                       <camera name="camera_d405" pos="0 0 0" quat="0 1 0 0" resolution="1280 720"
                         sensorsize="0.003896 0.00214" focal="0.00193 0.00193"/>
+                      <camera name="camera_d405_rgb" pos="0 0 0" quat="0 1 0 0" resolution="1280 720"
+                        sensorsize="1.28 0.72" focal="0.652725 0.651808"
+                        principal="-0.00806787 -0.00235107"/>
                     </body>
                   </body>
                   <body name="tip_left" pos="-0.0238981 0.0450619 -0.0545599" quat="0.499998 -0.5 -0.5 -0.500002">

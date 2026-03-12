@@ -91,10 +91,11 @@ def yam_lift_cube_vision_env_cfg(
 ) -> ManagerBasedRlEnvCfg:
   cfg = yam_lift_cube_env_cfg(play=play)
 
-  camera_names = ["robot/camera_d405"]
+  cam_name = "robot/camera_d405_rgb" if cam_type == "rgb" else "robot/camera_d405"
+  camera_names = [cam_name]
   # 16:9 aspect ratio.
   cam_kwargs = {
-    "robot/camera_d405": {
+    cam_name: {
       "height": 27,
       "width": 48,
     },
@@ -150,7 +151,8 @@ def yam_lift_cube_vision_env_cfg(
   # Camera domain randomization calibrated to real D405 measurements. Intrinsics are
   # defined at native 1280x720 and scale automatically to the training resolution
   # (64x36). The 1e-3 convention maps 1 native pixel to 0.001 in sensor units.
-  cam_asset_cfg = SceneEntityCfg("robot", camera_names=("camera_d405",))
+  cam_short = cam_name.split("/")[-1]  # camera_d405 or camera_d405_rgb
+  cam_asset_cfg = SceneEntityCfg("robot", camera_names=(cam_short,))
   # ±5% focal length (covers resolution-dependent FOV variation).
   cfg.events["camera_focal"] = EventTermCfg(
     func=dr.cam_intrinsic,
