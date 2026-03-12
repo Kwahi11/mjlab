@@ -95,14 +95,14 @@ def yam_lift_cube_vision_env_cfg(
   # 16:9 aspect ratio.
   cam_kwargs = {
     "robot/camera_d405": {
-      "height": 36,
-      "width": 64,
+      "height": 27,
+      "width": 48,
     },
   }
   shared_cam_kwargs = dict(
     data_types=(cam_type,),
     enabled_geom_groups=(0, 2),
-    use_shadows=False,
+    use_shadows=cam_type == "rgb",
     use_textures=cam_type == "rgb",
   )
 
