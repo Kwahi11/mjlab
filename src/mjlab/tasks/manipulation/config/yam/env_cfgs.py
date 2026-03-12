@@ -153,7 +153,7 @@ def yam_lift_cube_vision_env_cfg(
   # (64x36). The 1e-3 convention maps 1 native pixel to 0.001 in sensor units.
   cam_short = cam_name.split("/")[-1]  # camera_d405 or camera_d405_rgb
   cam_asset_cfg = SceneEntityCfg("robot", camera_names=(cam_short,))
-  # ±5% focal length (covers resolution-dependent FOV variation).
+  # ±10% focal length.
   cfg.events["camera_focal"] = EventTermCfg(
     func=dr.cam_intrinsic,
     mode="reset",
@@ -162,12 +162,15 @@ def yam_lift_cube_vision_env_cfg(
       "operation": "scale",
       "distribution": "uniform",
       "axes": [0, 1],
-      "ranges": (0.95, 1.05),
+      "ranges": (0.90, 1.10),
     },
   )
-  # ±5 native px principal point offset (≈0.25 px at 64x36).
-  # 5 px in sensor units: 5 * sensorsize / resolution.
-  # x: 5 * 0.003896 / 1280 ≈ 1.5e-5, y: 5 * 0.00214 / 720 ≈ 1.5e-5.
+  # ±10 native px principal point offset.
+  # In sensor units (1e-3 scale): 10 * 1e-3 / 1280 ≈ 8e-6 per pixel.
+  # For the RGB camera (sensorsize=1.28): 10 / 1280 * 1.28 = 0.01.
+  # For the depth camera (sensorsize=0.003896): 10 / 1280 * 0.003896 ≈ 3e-5.
+  # Use a range that works for both scale conventions.
+  pp_range = 0.01 if cam_type == "rgb" else 3e-5
   cfg.events["camera_principal"] = EventTermCfg(
     func=dr.cam_intrinsic,
     mode="reset",
@@ -176,10 +179,10 @@ def yam_lift_cube_vision_env_cfg(
       "operation": "add",
       "distribution": "uniform",
       "axes": [2, 3],
-      "ranges": (-1.5e-5, 1.5e-5),
+      "ranges": (-pp_range, pp_range),
     },
   )
-  # ±10 mm position (real mount differed by ~15 mm but ±20 mm clips geometry).
+  # ±20 mm position (real mount can differ by ~15 mm from CAD).
   cfg.events["camera_pos"] = EventTermCfg(
     func=dr.cam_pos,
     mode="reset",
@@ -187,18 +190,18 @@ def yam_lift_cube_vision_env_cfg(
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
       "distribution": "uniform",
-      "ranges": (-0.01, 0.01),
+      "ranges": (-0.02, 0.02),
     },
   )
-  # ±5° per axis (real mount differed by ~5-8° from CAD).
+  # ±10° per axis (real mount differed by ~5-8° from CAD).
   cfg.events["camera_quat"] = EventTermCfg(
     func=dr.cam_quat,
     mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
-      "roll_range": (-0.087, 0.087),
-      "pitch_range": (-0.087, 0.087),
-      "yaw_range": (-0.087, 0.087),
+      "roll_range": (-0.175, 0.175),
+      "pitch_range": (-0.175, 0.175),
+      "yaw_range": (-0.175, 0.175),
     },
   )
 
