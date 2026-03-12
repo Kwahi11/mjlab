@@ -16,3 +16,9 @@ from mjlab.utils.noise.noise_model import NoiseModel as NoiseModel
 from mjlab.utils.noise.noise_model import (
   NoiseModelWithAdditiveBias as NoiseModelWithAdditiveBias,
 )
+from mjlab.utils.noise.rgb_augmentation import (
+  RgbAugmentationCfg as RgbAugmentationCfg,
+)
+from mjlab.utils.noise.rgb_augmentation import (  # noqa: F401
+  RgbAugmentationModel as RgbAugmentationModel,
+)

@@ -55,6 +55,12 @@ class ViserCameraViewer:
     self._display_width = width * scale
     self._needs_upsampling = scale > 1
 
+    if self._has_camera_obs:
+      self._show_policy_view_toggle = self._server.gui.add_checkbox(
+        label="Show Policy View",
+        initial_value=False,
+      )
+
     if self._has_rgb:
       self._rgb_handle = self._server.gui.add_image(
         image=np.zeros((self._display_height, self._display_width, 3), dtype=np.uint8),
@@ -70,11 +76,6 @@ class ViserCameraViewer:
         step=0.1,
         initial_value=1.0,
       )
-      if self._has_camera_obs:
-        self._show_policy_view_toggle = self._server.gui.add_checkbox(
-          label="Show Policy View",
-          initial_value=False,
-        )
       self._depth_handle = self._server.gui.add_image(
         image=np.zeros((self._display_height, self._display_width, 3), dtype=np.uint8),
         label=f"{self._camera_name}_depth",
@@ -140,9 +141,18 @@ class ViserCameraViewer:
     data = self._camera_sensor.data
 
     if self._has_rgb and self._rgb_handle is not None and data.rgb is not None:
-      rgb_np = data.rgb[env_idx].cpu().numpy()
+      show_policy = self._has_camera_obs and self._show_policy_view_toggle.value
 
-      # Upsample if needed for better visibility
+      if show_policy:
+        obs_mgr = self._env.unwrapped.observation_manager
+        camera_obs = obs_mgr.compute()["camera"]
+        # (B, C, H, W) with C=3 for RGB — convert to (H, W, C) uint8.
+        rgb_np = camera_obs[env_idx, :3].clamp(0.0, 1.0).permute(1, 2, 0).cpu().numpy()
+        rgb_np = (rgb_np * 255).astype(np.uint8)
+      else:
+        rgb_np = data.rgb[env_idx].cpu().numpy()
+
+      # Upsample if needed for better visibility.
       if self._needs_upsampling:
         scale = self._display_height // rgb_np.shape[0]
         rgb_np = self._upsample_nearest(rgb_np, scale)
@@ -175,13 +185,13 @@ class ViserCameraViewer:
     self._update_frustum(sim_data, env_idx, scene_offset)
 
   def cleanup(self) -> None:
+    if self._has_camera_obs:
+      self._show_policy_view_toggle.remove()
     if self._rgb_handle is not None:
       self._rgb_handle.remove()
     if self._depth_handle is not None:
       self._depth_handle.remove()
       self._depth_scale_slider.remove()
-      if self._has_camera_obs:
-        self._show_policy_view_toggle.remove()
     if self._frustum_handle is not None:
       self._frustum_handle.remove()
     self._show_frustum_toggle.remove()
