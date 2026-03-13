@@ -182,7 +182,7 @@ def yam_lift_cube_vision_env_cfg(
       "ranges": (-pp_range, pp_range),
     },
   )
-  # ±20 mm position (real mount can differ by ~15 mm from CAD).
+  # ±10 mm position (calibrated error was ~8 mm max).
   cfg.events["camera_pos"] = EventTermCfg(
     func=dr.cam_pos,
     mode="reset",
@@ -190,18 +190,18 @@ def yam_lift_cube_vision_env_cfg(
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
       "distribution": "uniform",
-      "ranges": (-0.02, 0.02),
+      "ranges": (-0.01, 0.01),
     },
   )
-  # ±10° per axis (real mount differed by ~5-8° from CAD).
+  # ±5° per axis (calibrated error was ~1-2°).
   cfg.events["camera_quat"] = EventTermCfg(
     func=dr.cam_quat,
     mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
-      "roll_range": (-0.175, 0.175),
-      "pitch_range": (-0.175, 0.175),
-      "yaw_range": (-0.175, 0.175),
+      "roll_range": (-0.087, 0.087),
+      "pitch_range": (-0.087, 0.087),
+      "yaw_range": (-0.087, 0.087),
     },
   )
 
