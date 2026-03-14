@@ -69,19 +69,15 @@ DM_4310 = ElectricActuator(
   effort_limit=10.0,
 )
 
-NATURAL_FREQ_TARGET = 10.0 * 2.0 * 3.1415926535  # 10 Hz target
-DAMPING_RATIO = 1.0
-
-# Hardware kd limits (after torque constant correction of 1.3x).
+# Hardware limits (12-bit encoding, all motor types).
+#   kp_hw: [0, 500],  kd_hw: [0, 5.0]
+# Real motors produce 1.3x more torque than firmware assumes.
 TORQUE_CONSTANT_CORRECTION = 1.3
 _KD_HW_MAX = {
-  "DM4340": 5.0,
-  "DM4310": 2.5,
+  "DM4340": 5.0,  # kd_sim_max = 6.50
+  "DM4310": 2.0,  # kd_sim_max = 2.60  (vibrates at 2.5)
 }
 
-# Per-joint PD gains: use target frequency, clamped per-joint so that
-# kd_hw = kd_sim / TORQUE_CONSTANT_CORRECTION <= kd_hw_max.
-# No kp limit (only kd wraps on 12-bit encoding).
 _ARM_JOINTS: dict[str, ElectricActuator] = {
   "joint1": DM_4340,
   "joint2": DM_4340,
@@ -99,23 +95,26 @@ _ARM_MOTOR_TYPE: dict[str, str] = {
   "joint6": "DM4310",
 }
 
+NATURAL_FREQ_TARGET = 10.0 * 2.0 * 3.1415926535  # 10 Hz (rad/s)
+KP_MULTIPLIER = 4.0
 
-def _clamped_omega(name: str) -> float:
-  """Natural frequency for a joint, clamped to its hardware kd limit."""
+
+def _arm_gains(name: str) -> tuple[float, float]:
+  """Compute (kp, kd) for an arm joint."""
   m = EFFECTIVE_INERTIAS[name]
   kd_sim_max = _KD_HW_MAX[_ARM_MOTOR_TYPE[name]] * TORQUE_CONSTANT_CORRECTION
-  omega_kd = kd_sim_max / (2.0 * DAMPING_RATIO * m)
-  return min(NATURAL_FREQ_TARGET, omega_kd)
+  omega_kd = kd_sim_max / (2.0 * m)
+  omega = min(NATURAL_FREQ_TARGET, omega_kd)
+  kp = m * omega**2 * KP_MULTIPLIER
+  kd = 2.0 * m * omega  # critically-damped kd at this omega
+  return kp, kd
 
 
-# Resulting per-joint frequencies (Hz):
-#   joint1: 4.20, joint2: 1.86, joint3: 2.22,
-#   joint4: 8.58, joint5: 10.00, joint6: 10.00
 ARM_ACTUATORS = tuple(
   BuiltinPositionActuatorCfg(
     target_names_expr=(name,),
-    stiffness=EFFECTIVE_INERTIAS[name] * _clamped_omega(name) ** 2,
-    damping=2.0 * DAMPING_RATIO * EFFECTIVE_INERTIAS[name] * _clamped_omega(name),
+    stiffness=_arm_gains(name)[0],
+    damping=_arm_gains(name)[1],
     effort_limit=motor.effort_limit,
     armature=motor.reflected_inertia,
   )
@@ -156,10 +155,14 @@ GRIPPER_TRANSMISSION_RATIO = GRIPPER_FINGER_STROKE / GRIPPER_MOTOR_STROKE
 )
 
 # PD gains: kp = M_eff * omega^2, kd = 2 * zeta * M_eff * omega.
-NATURAL_FREQ_GRIPPER = 10.0 * 2.0 * 3.1415926535  # 2 Hz
+NATURAL_FREQ_GRIPPER = 10.0 * 2.0 * 3.1415926535  # 10 Hz
+_GRIPPER_DAMPING_RATIO = 1.0
 STIFFNESS_GRIPPER = EFFECTIVE_INERTIAS["left_finger"] * NATURAL_FREQ_GRIPPER**2
 DAMPING_GRIPPER = (
-  2.0 * DAMPING_RATIO * EFFECTIVE_INERTIAS["left_finger"] * NATURAL_FREQ_GRIPPER
+  2.0
+  * _GRIPPER_DAMPING_RATIO
+  * EFFECTIVE_INERTIAS["left_finger"]
+  * NATURAL_FREQ_GRIPPER
 )
 
 # Limit gripper force to 10% of motor capacity for sim stability.
@@ -308,18 +311,23 @@ if __name__ == "__main__":
   elif len(sys.argv) > 1 and sys.argv[1] == "gains":
     # Print PD gains for all actuators.
     # Usage: python yam_constants.py gains
-    print(f"{'joint':<14} {'freq_hz':>8} {'kp':>10} {'kd':>10} {'kd_hw':>8}")
-    print("-" * 54)
+    import math
+
+    c = TORQUE_CONSTANT_CORRECTION
+    print(
+      f"{'joint':<14} {'kp_sim':>8} {'kd_sim':>8} {'kp_hw':>8} {'kd_hw':>8} {'zeta':>6}"
+    )
+    print("-" * 56)
     for a in ARTICULATION.actuators:
       assert isinstance(a, BuiltinPositionActuatorCfg)
       name = a.target_names_expr[0]
       kp = a.stiffness
       kd = a.damping
-      kd_hw = kd / TORQUE_CONSTANT_CORRECTION
       m = EFFECTIVE_INERTIAS[name]
-      omega = kd / (2.0 * DAMPING_RATIO * m)
-      freq = omega / (2.0 * 3.1415926535)
-      print(f"{name:<14} {freq:>8.2f} {kp:>10.2f} {kd:>10.3f} {kd_hw:>8.3f}")
+      zeta = kd / (2.0 * math.sqrt(kp * m))
+      print(
+        f"{name:<14} {kp:>8.1f} {kd:>8.3f} {kp / c:>8.1f} {kd / c:>8.3f} {zeta:>6.2f}"
+      )
   else:
     import mujoco.viewer as viewer
 
