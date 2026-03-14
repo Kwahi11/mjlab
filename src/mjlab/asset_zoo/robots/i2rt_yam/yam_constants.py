@@ -96,17 +96,17 @@ _ARM_MOTOR_TYPE: dict[str, str] = {
 }
 
 NATURAL_FREQ_TARGET = 10.0 * 2.0 * 3.1415926535  # 10 Hz (rad/s)
-KP_MULTIPLIER = 4.0
+DAMPING_RATIO = 1.0
 
 
 def _arm_gains(name: str) -> tuple[float, float]:
-  """Compute (kp, kd) for an arm joint."""
+  """Compute (kp, kd) for an arm joint, clamping omega to hw kd max."""
   m = EFFECTIVE_INERTIAS[name]
   kd_sim_max = _KD_HW_MAX[_ARM_MOTOR_TYPE[name]] * TORQUE_CONSTANT_CORRECTION
-  omega_kd = kd_sim_max / (2.0 * m)
-  omega = min(NATURAL_FREQ_TARGET, omega_kd)
-  kp = m * omega**2 * KP_MULTIPLIER
-  kd = 2.0 * m * omega  # critically-damped kd at this omega
+  omega_max = kd_sim_max / (2.0 * DAMPING_RATIO * m)
+  omega = min(NATURAL_FREQ_TARGET, omega_max)
+  kp = m * omega**2
+  kd = 2.0 * DAMPING_RATIO * m * omega
   return kp, kd
 
 
