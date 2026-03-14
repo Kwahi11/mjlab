@@ -165,15 +165,15 @@ DAMPING_GRIPPER = (
   * NATURAL_FREQ_GRIPPER
 )
 
-# Limit gripper force to 10% of motor capacity for sim stability.
-# GRIPPER_EFFORT_LIMIT_SAFE = GRIPPER_EFFORT_LIMIT * 0.1
+# Limit gripper force to 10% of motor capacity to protect 3D printed tips.
+GRIPPER_EFFORT_LIMIT_SAFE = GRIPPER_EFFORT_LIMIT * 0.1
 
 # Only actuate left_finger; right_finger is coupled via equality constraint.
 GRIPPER_ACTUATOR = BuiltinPositionActuatorCfg(
   target_names_expr=("left_finger",),
   stiffness=STIFFNESS_GRIPPER,
   damping=DAMPING_GRIPPER,
-  effort_limit=GRIPPER_EFFORT_LIMIT,
+  effort_limit=GRIPPER_EFFORT_LIMIT_SAFE,
   armature=GRIPPER_ARMATURE,
 )
 
