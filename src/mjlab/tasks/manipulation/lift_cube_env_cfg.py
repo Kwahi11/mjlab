@@ -125,17 +125,17 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
         "bias_range": (-0.01, 0.01),
       },
     ),
-    "cube_size": EventTermCfg(
-      mode="startup",
-      func=dr.geom_size,
-      params={
-        "asset_cfg": SceneEntityCfg("cube", geom_names=("cube_geom",)),
-        "operation": "scale",
-        "distribution": "uniform",
-        "axes": [0, 1, 2],
-        "ranges": (0.7, 1.3),
-      },
-    ),
+    # "cube_size": EventTermCfg(
+    #   mode="startup",
+    #   func=dr.geom_size,
+    #   params={
+    #     "asset_cfg": SceneEntityCfg("cube", geom_names=("cube_geom",)),
+    #     "operation": "scale",
+    #     "distribution": "uniform",
+    #     "axes": [0, 1, 2],
+    #     "ranges": (0.7, 1.3),
+    #   },
+    # ),
     "frictionloss_dm4340": EventTermCfg(
       mode="startup",
       func=dr.joint_friction,
