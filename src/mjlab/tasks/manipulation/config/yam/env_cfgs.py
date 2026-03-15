@@ -106,8 +106,8 @@ def yam_lift_cube_vision_env_cfg(
   shared_cam_kwargs = dict(
     data_types=(cam_type,),
     enabled_geom_groups=(0, 2),
-    use_shadows=False,  # cam_type == "rgb",
-    use_textures=False,  # cam_type == "rgb",
+    use_shadows=cam_type == "rgb",
+    use_textures=cam_type == "rgb",
   )
 
   cam_terms = {}
@@ -159,7 +159,7 @@ def yam_lift_cube_vision_env_cfg(
   # ±10% focal length.
   cfg.events["camera_focal"] = EventTermCfg(
     func=dr.cam_intrinsic,
-    mode="startup",
+    mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
       "operation": "scale",
@@ -176,7 +176,7 @@ def yam_lift_cube_vision_env_cfg(
   pp_range = 0.01 if cam_type == "rgb" else 3e-5
   cfg.events["camera_principal"] = EventTermCfg(
     func=dr.cam_intrinsic,
-    mode="startup",
+    mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
@@ -185,26 +185,26 @@ def yam_lift_cube_vision_env_cfg(
       "ranges": (-pp_range, pp_range),
     },
   )
-  # ±5 mm position.
+  # ±1 cm position.
   cfg.events["camera_pos"] = EventTermCfg(
     func=dr.cam_pos,
-    mode="startup",
+    mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
       "distribution": "uniform",
-      "ranges": (-0.005, 0.005),
+      "ranges": (-0.01, 0.01),
     },
   )
   # ±2.5° per axis.
   cfg.events["camera_quat"] = EventTermCfg(
     func=dr.cam_quat,
-    mode="startup",
+    mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
-      "roll_range": (-0.044, 0.044),
-      "pitch_range": (-0.044, 0.044),
-      "yaw_range": (-0.044, 0.044),
+      "roll_range": (-0.087, 0.087),
+      "pitch_range": (-0.087, 0.087),
+      "yaw_range": (-0.087, 0.087),
     },
   )
 
@@ -216,7 +216,7 @@ def yam_lift_cube_vision_env_cfg(
 
     cfg.events["cube_color"] = EventTermCfg(
       func=dr.geom_rgba,
-      mode="startup",
+      mode="reset",
       params={
         "asset_cfg": SceneEntityCfg("cube", geom_names=(".*",)),
         "operation": "abs",
@@ -227,7 +227,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["plane_color"] = EventTermCfg(
       func=dr.geom_rgba,
-      mode="startup",
+      mode="reset",
       params={
         "asset_cfg": SceneEntityCfg("terrain", geom_names=("terrain",)),
         "operation": "abs",
@@ -238,7 +238,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["gripper_color"] = EventTermCfg(
       func=dr.mat_rgba,
-      mode="startup",
+      mode="reset",
       params={
         "asset_cfg": SceneEntityCfg(
           "robot",
@@ -252,7 +252,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["light_pos"] = EventTermCfg(
       func=dr.light_pos,
-      mode="startup",
+      mode="reset",
       params={
         "operation": "add",
         "distribution": "uniform",
@@ -261,7 +261,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["light_dir"] = EventTermCfg(
       func=dr.light_dir,
-      mode="startup",
+      mode="reset",
       params={
         "operation": "add",
         "distribution": "uniform",

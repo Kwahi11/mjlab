@@ -26,7 +26,7 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
   actor_terms = {
     "joint_pos": ObservationTermCfg(
       func=mdp.joint_pos_rel,
-      params={"biased": True},
+      # params={"biased": True},
       noise=Unoise(n_min=-0.01, n_max=0.01),
       # delay_min_lag=0,
       # delay_max_lag=2,
@@ -119,29 +119,29 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.reset_joints_by_offset,
       mode="reset",
       params={
-        "position_range": (-0.1, 0.1),
-        "velocity_range": (-0.05, 0.05),
+        "position_range": (0.0, 0.0),
+        "velocity_range": (0.0, 0.0),
         "asset_cfg": SceneEntityCfg("robot", joint_names=(".*",)),
       },
     ),
-    "encoder_bias_arm": EventTermCfg(
-      mode="startup",
-      func=dr.encoder_bias,
-      params={
-        "asset_cfg": SceneEntityCfg("robot", joint_names=("joint.*",)),
-        "bias_range": (-0.01, 0.01),
-      },
-    ),
-    "encoder_bias_gripper": EventTermCfg(
-      mode="startup",
-      func=dr.encoder_bias,
-      params={
-        "asset_cfg": SceneEntityCfg(
-          "robot", joint_names=("left_finger", "right_finger")
-        ),
-        "bias_range": (-0.01, 0.01),
-      },
-    ),
+    # "encoder_bias_arm": EventTermCfg(
+    #   mode="startup",
+    #   func=dr.encoder_bias,
+    #   params={
+    #     "asset_cfg": SceneEntityCfg("robot", joint_names=("joint.*",)),
+    #     "bias_range": (-0.01, 0.01),
+    #   },
+    # ),
+    # "encoder_bias_gripper": EventTermCfg(
+    #   mode="startup",
+    #   func=dr.encoder_bias,
+    #   params={
+    #     "asset_cfg": SceneEntityCfg(
+    #       "robot", joint_names=("left_finger", "right_finger")
+    #     ),
+    #     "bias_range": (-0.01, 0.01),
+    #   },
+    # ),
     # "cube_size": EventTermCfg(
     #   mode="startup",
     #   func=dr.geom_size,
