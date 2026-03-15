@@ -156,7 +156,7 @@ def yam_lift_cube_vision_env_cfg(
   # ±10% focal length.
   cfg.events["camera_focal"] = EventTermCfg(
     func=dr.cam_intrinsic,
-    mode="reset",
+    mode="startup",
     params={
       "asset_cfg": cam_asset_cfg,
       "operation": "scale",
@@ -173,7 +173,7 @@ def yam_lift_cube_vision_env_cfg(
   pp_range = 0.01 if cam_type == "rgb" else 3e-5
   cfg.events["camera_principal"] = EventTermCfg(
     func=dr.cam_intrinsic,
-    mode="reset",
+    mode="startup",
     params={
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
@@ -185,7 +185,7 @@ def yam_lift_cube_vision_env_cfg(
   # ±5 mm position.
   cfg.events["camera_pos"] = EventTermCfg(
     func=dr.cam_pos,
-    mode="reset",
+    mode="startup",
     params={
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
@@ -196,7 +196,7 @@ def yam_lift_cube_vision_env_cfg(
   # ±2.5° per axis.
   cfg.events["camera_quat"] = EventTermCfg(
     func=dr.cam_quat,
-    mode="reset",
+    mode="startup",
     params={
       "asset_cfg": cam_asset_cfg,
       "roll_range": (-0.044, 0.044),
@@ -213,7 +213,7 @@ def yam_lift_cube_vision_env_cfg(
 
     cfg.events["cube_color"] = EventTermCfg(
       func=dr.geom_rgba,
-      mode="reset",
+      mode="startup",
       params={
         "asset_cfg": SceneEntityCfg("cube", geom_names=(".*",)),
         "operation": "abs",
@@ -224,7 +224,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["plane_color"] = EventTermCfg(
       func=dr.geom_rgba,
-      mode="reset",
+      mode="startup",
       params={
         "asset_cfg": SceneEntityCfg("terrain", geom_names=("terrain",)),
         "operation": "abs",
@@ -235,7 +235,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["gripper_color"] = EventTermCfg(
       func=dr.mat_rgba,
-      mode="reset",
+      mode="startup",
       params={
         "asset_cfg": SceneEntityCfg(
           "robot",
@@ -249,7 +249,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["light_pos"] = EventTermCfg(
       func=dr.light_pos,
-      mode="reset",
+      mode="startup",
       params={
         "operation": "add",
         "distribution": "uniform",
@@ -258,7 +258,7 @@ def yam_lift_cube_vision_env_cfg(
     )
     cfg.events["light_dir"] = EventTermCfg(
       func=dr.light_dir,
-      mode="reset",
+      mode="startup",
       params={
         "operation": "add",
         "distribution": "uniform",
