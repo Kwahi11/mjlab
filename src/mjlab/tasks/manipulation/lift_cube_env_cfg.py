@@ -102,9 +102,38 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.reset_joints_by_offset,
       mode="reset",
       params={
-        "position_range": (0.0, 0.0),
-        "velocity_range": (0.0, 0.0),
+        "position_range": (-0.1, 0.1),
+        "velocity_range": (-0.05, 0.05),
         "asset_cfg": SceneEntityCfg("robot", joint_names=(".*",)),
+      },
+    ),
+    "encoder_bias_arm": EventTermCfg(
+      mode="startup",
+      func=dr.encoder_bias,
+      params={
+        "asset_cfg": SceneEntityCfg("robot", joint_names=("joint.*",)),
+        "bias_range": (-0.01, 0.01),
+      },
+    ),
+    "encoder_bias_gripper": EventTermCfg(
+      mode="startup",
+      func=dr.encoder_bias,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", joint_names=("left_finger", "right_finger")
+        ),
+        "bias_range": (-0.001, 0.001),
+      },
+    ),
+    "cube_size": EventTermCfg(
+      mode="startup",
+      func=dr.geom_size,
+      params={
+        "asset_cfg": SceneEntityCfg("cube", geom_names=("cube_geom",)),
+        "operation": "scale",
+        "distribution": "uniform",
+        "axes": [0, 1, 2],
+        "ranges": (0.7, 1.3),
       },
     ),
     "fingertip_friction_slide": EventTermCfg(
