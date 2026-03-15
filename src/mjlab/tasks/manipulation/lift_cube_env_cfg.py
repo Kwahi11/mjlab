@@ -23,14 +23,20 @@ from mjlab.viewer import ViewerConfig
 def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
   """Create base cube lifting task configuration."""
 
+  # Observation delay: randomize 0–1 control steps (0–20ms) to model CAN
+  # bus latency on real hardware (~4–8ms).
   actor_terms = {
     "joint_pos": ObservationTermCfg(
       func=mdp.joint_pos_rel,
       noise=Unoise(n_min=-0.01, n_max=0.01),
+      delay_min_lag=0,
+      delay_max_lag=2,
     ),
     "joint_vel": ObservationTermCfg(
       func=mdp.joint_vel_rel,
       noise=Unoise(n_min=-1.5, n_max=1.5),
+      delay_min_lag=0,
+      delay_max_lag=2,
     ),
     "ee_to_cube": ObservationTermCfg(
       func=manipulation_mdp.ee_to_object_distance,
