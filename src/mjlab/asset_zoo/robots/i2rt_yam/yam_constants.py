@@ -112,20 +112,13 @@ def _arm_gains(name: str) -> tuple[float, float]:
   return kp, kd
 
 
-# Actuator delay: randomize 0–1 physics timesteps (0–5ms) to model CAN
-# command latency on real hardware (~2–5ms).
 ARM_ACTUATORS = tuple(
-  DelayedActuatorCfg(
-    base_cfg=BuiltinPositionActuatorCfg(
-      target_names_expr=(name,),
-      stiffness=_arm_gains(name)[0],
-      damping=_arm_gains(name)[1],
-      effort_limit=motor.effort_limit,
-      armature=motor.reflected_inertia,
-    ),
-    delay_target="position",
-    delay_min_lag=0,
-    delay_max_lag=2,
+  BuiltinPositionActuatorCfg(
+    target_names_expr=(name,),
+    stiffness=_arm_gains(name)[0],
+    damping=_arm_gains(name)[1],
+    effort_limit=motor.effort_limit,
+    armature=motor.reflected_inertia,
   )
   for name, motor in _ARM_JOINTS.items()
 )
@@ -178,17 +171,12 @@ DAMPING_GRIPPER = (
 GRIPPER_EFFORT_LIMIT_SAFE = 150.0  # N, protects 3D printed tips.
 
 # Only actuate left_finger; right_finger is coupled via equality constraint.
-GRIPPER_ACTUATOR = DelayedActuatorCfg(
-  base_cfg=BuiltinPositionActuatorCfg(
-    target_names_expr=("left_finger",),
-    stiffness=STIFFNESS_GRIPPER,
-    damping=DAMPING_GRIPPER,
-    effort_limit=GRIPPER_EFFORT_LIMIT_SAFE,
-    armature=GRIPPER_ARMATURE,
-  ),
-  delay_target="position",
-  delay_min_lag=0,
-  delay_max_lag=2,
+GRIPPER_ACTUATOR = BuiltinPositionActuatorCfg(
+  target_names_expr=("left_finger",),
+  stiffness=STIFFNESS_GRIPPER,
+  damping=DAMPING_GRIPPER,
+  effort_limit=GRIPPER_EFFORT_LIMIT_SAFE,
+  armature=GRIPPER_ARMATURE,
 )
 
 ##

@@ -23,11 +23,10 @@ from mjlab.viewer import ViewerConfig
 def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
   """Create base cube lifting task configuration."""
 
-  # Observation delay: randomize 0–1 control steps (0–20ms) to model CAN
-  # bus latency on real hardware (~4–8ms).
   actor_terms = {
     "joint_pos": ObservationTermCfg(
       func=mdp.joint_pos_rel,
+      params={"biased": True},
       noise=Unoise(n_min=-0.01, n_max=0.01),
       delay_min_lag=0,
       delay_max_lag=2,
@@ -57,7 +56,25 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
     "actions": ObservationTermCfg(func=mdp.last_action),
   }
 
-  critic_terms = {**actor_terms}
+  critic_terms = {
+    "joint_pos": ObservationTermCfg(func=mdp.joint_pos_rel),
+    "joint_vel": ObservationTermCfg(func=mdp.joint_vel_rel),
+    "ee_to_cube": ObservationTermCfg(
+      func=manipulation_mdp.ee_to_object_distance,
+      params={
+        "object_name": "cube",
+        "asset_cfg": SceneEntityCfg("robot", site_names=()),  # Set per-robot.
+      },
+    ),
+    "cube_to_goal": ObservationTermCfg(
+      func=manipulation_mdp.object_to_goal_distance,
+      params={
+        "object_name": "cube",
+        "command_name": "lift_height",
+      },
+    ),
+    "actions": ObservationTermCfg(func=mdp.last_action),
+  }
 
   observations = {
     "actor": ObservationGroupCfg(actor_terms, enable_corruption=True),
