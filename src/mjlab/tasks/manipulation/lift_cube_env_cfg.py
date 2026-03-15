@@ -28,14 +28,14 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
       func=mdp.joint_pos_rel,
       params={"biased": True},
       noise=Unoise(n_min=-0.01, n_max=0.01),
-      delay_min_lag=0,
-      delay_max_lag=2,
+      # delay_min_lag=0,
+      # delay_max_lag=2,
     ),
     "joint_vel": ObservationTermCfg(
       func=mdp.joint_vel_rel,
       noise=Unoise(n_min=-1.5, n_max=1.5),
-      delay_min_lag=0,
-      delay_max_lag=2,
+      # delay_min_lag=0,
+      # delay_max_lag=2,
     ),
     "ee_to_cube": ObservationTermCfg(
       func=manipulation_mdp.ee_to_object_distance,
