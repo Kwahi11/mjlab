@@ -122,7 +122,7 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
         "asset_cfg": SceneEntityCfg(
           "robot", joint_names=("left_finger", "right_finger")
         ),
-        "bias_range": (-0.001, 0.001),
+        "bias_range": (-0.01, 0.01),
       },
     ),
     "cube_size": EventTermCfg(
@@ -134,6 +134,78 @@ def make_lift_cube_env_cfg() -> ManagerBasedRlEnvCfg:
         "distribution": "uniform",
         "axes": [0, 1, 2],
         "ranges": (0.7, 1.3),
+      },
+    ),
+    "frictionloss_dm4340": EventTermCfg(
+      mode="startup",
+      func=dr.joint_friction,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", joint_names=("joint1", "joint2", "joint3")
+        ),
+        "operation": "abs",
+        "distribution": "uniform",
+        "ranges": (0.3, 1.5),
+      },
+    ),
+    "frictionloss_dm4310": EventTermCfg(
+      mode="startup",
+      func=dr.joint_friction,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", joint_names=("joint4", "joint5", "joint6")
+        ),
+        "operation": "abs",
+        "distribution": "uniform",
+        "ranges": (0.1, 0.5),
+      },
+    ),
+    "frictionloss_gripper": EventTermCfg(
+      mode="startup",
+      func=dr.joint_friction,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", joint_names=("left_finger", "right_finger")
+        ),
+        "operation": "abs",
+        "distribution": "uniform",
+        "ranges": (2.0, 10.0),
+      },
+    ),
+    "damping_dm4340": EventTermCfg(
+      mode="startup",
+      func=dr.joint_damping,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", joint_names=("joint1", "joint2", "joint3")
+        ),
+        "operation": "abs",
+        "distribution": "uniform",
+        "ranges": (0.05, 0.3),
+      },
+    ),
+    "damping_dm4310": EventTermCfg(
+      mode="startup",
+      func=dr.joint_damping,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", joint_names=("joint4", "joint5", "joint6")
+        ),
+        "operation": "abs",
+        "distribution": "uniform",
+        "ranges": (0.01, 0.1),
+      },
+    ),
+    "damping_gripper": EventTermCfg(
+      mode="startup",
+      func=dr.joint_damping,
+      params={
+        "asset_cfg": SceneEntityCfg(
+          "robot", joint_names=("left_finger", "right_finger")
+        ),
+        "operation": "abs",
+        "distribution": "uniform",
+        "ranges": (1.0, 5.0),
       },
     ),
     "fingertip_friction_slide": EventTermCfg(

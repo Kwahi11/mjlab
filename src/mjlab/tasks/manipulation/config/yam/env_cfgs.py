@@ -103,8 +103,8 @@ def yam_lift_cube_vision_env_cfg(
   shared_cam_kwargs = dict(
     data_types=(cam_type,),
     enabled_geom_groups=(0, 2),
-    use_shadows=cam_type == "rgb",
-    use_textures=cam_type == "rgb",
+    use_shadows=False,  # cam_type == "rgb",
+    use_textures=False,  # cam_type == "rgb",
   )
 
   cam_terms = {}
@@ -182,7 +182,7 @@ def yam_lift_cube_vision_env_cfg(
       "ranges": (-pp_range, pp_range),
     },
   )
-  # ±10 mm position (calibrated error was ~8 mm max).
+  # ±5 mm position.
   cfg.events["camera_pos"] = EventTermCfg(
     func=dr.cam_pos,
     mode="reset",
@@ -190,18 +190,18 @@ def yam_lift_cube_vision_env_cfg(
       "asset_cfg": cam_asset_cfg,
       "operation": "add",
       "distribution": "uniform",
-      "ranges": (-0.01, 0.01),
+      "ranges": (-0.005, 0.005),
     },
   )
-  # ±5° per axis (calibrated error was ~1-2°).
+  # ±2.5° per axis.
   cfg.events["camera_quat"] = EventTermCfg(
     func=dr.cam_quat,
     mode="reset",
     params={
       "asset_cfg": cam_asset_cfg,
-      "roll_range": (-0.087, 0.087),
-      "pitch_range": (-0.087, 0.087),
-      "yaw_range": (-0.087, 0.087),
+      "roll_range": (-0.044, 0.044),
+      "pitch_range": (-0.044, 0.044),
+      "yaw_range": (-0.044, 0.044),
     },
   )
 
