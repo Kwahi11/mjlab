@@ -206,6 +206,8 @@ def unitree_go1_rough_env_cfg(
   cfg.rewards["body_ang_vel"].weight = 0.0
   cfg.rewards["angular_momentum"].weight = 0.0
   cfg.rewards["air_time"].weight = 0.0
+  cfg.rewards["joint_vel_l2"] = RewardTermCfg(func=mdp.joint_vel_l2, weight=-1e-5)
+  cfg.rewards["joint_acc_l2"] = RewardTermCfg(func=mdp.joint_acc_l2, weight=-1e-7)
 
   # Per-body-group collision penalties.
   cfg.rewards["self_collisions"] = RewardTermCfg(
