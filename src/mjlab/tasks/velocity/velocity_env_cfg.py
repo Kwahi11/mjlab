@@ -91,6 +91,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
     "joint_pos": ObservationTermCfg(
       func=mdp.joint_pos_rel,
       noise=Unoise(n_min=-0.01, n_max=0.01),
+      params={"biased": True},
     ),
     "joint_vel": ObservationTermCfg(
       func=mdp.joint_vel_rel,
@@ -111,6 +112,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
 
   critic_terms = {
     **actor_terms,
+    "joint_pos": ObservationTermCfg(func=mdp.joint_pos_rel),
     "height_scan": ObservationTermCfg(
       func=envs_mdp.height_scan,
       params={"sensor_name": "terrain_scan"},
