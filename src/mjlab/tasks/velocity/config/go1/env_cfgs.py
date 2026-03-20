@@ -220,6 +220,11 @@ def unitree_go1_rough_env_cfg(
     weight=-0.1,
     params={"sensor_name": shank_ground_cfg.name},
   )
+  cfg.rewards["thigh_collision"] = RewardTermCfg(
+    func=mdp.self_collision_cost,
+    weight=-0.5,
+    params={"sensor_name": thigh_ground_cfg.name},
+  )
   cfg.rewards["trunk_head_collision"] = RewardTermCfg(
     func=mdp.self_collision_cost,
     weight=-0.1,
@@ -290,7 +295,12 @@ def unitree_go1_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.rewards["upright"].params.pop("terrain_sensor_names", None)
 
   # Remove granular collision rewards (not useful on flat ground).
-  for key in ("self_collisions", "shank_collision", "trunk_head_collision"):
+  for key in (
+    "self_collisions",
+    "shank_collision",
+    "thigh_collision",
+    "trunk_head_collision",
+  ):
     cfg.rewards.pop(key, None)
 
   # On flat terrain fell_over is sufficient; thigh contact implies fallen.
