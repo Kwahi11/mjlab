@@ -35,10 +35,11 @@ def unitree_go1_rough_env_cfg(
   """Create Unitree Go1 rough terrain velocity configuration."""
   cfg = make_velocity_env_cfg()
 
-  cfg.sim.mujoco.ccd_iterations = 500
+  cfg.sim.njmax = 100
+  cfg.sim.nconmax = 20
+
   cfg.sim.mujoco.impratio = 10
   cfg.sim.mujoco.cone = "elliptic"
-  cfg.sim.contact_sensor_maxmatch = 500
 
   cfg.scene.entities = {"robot": get_go1_robot_cfg()}
 
@@ -269,10 +270,7 @@ def unitree_go1_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   """Create Unitree Go1 flat terrain velocity configuration."""
   cfg = unitree_go1_rough_env_cfg(play=play)
 
-  cfg.sim.njmax = 300
-  cfg.sim.mujoco.ccd_iterations = 50
-  cfg.sim.contact_sensor_maxmatch = 64
-  cfg.sim.nconmax = None
+  cfg.sim.njmax = 50
 
   # Switch to flat terrain.
   assert cfg.scene.terrain is not None
