@@ -279,6 +279,11 @@ class feet_swing_height:
     )
     self.step_dt = env.step_dt
 
+  def reset(self, env_ids: torch.Tensor | slice | None = None) -> None:
+    if env_ids is None:
+      env_ids = slice(None)
+    self.peak_heights[env_ids] = 0.0
+
   def __call__(
     self,
     env: ManagerBasedRlEnv,
