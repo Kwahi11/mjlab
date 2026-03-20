@@ -203,8 +203,8 @@ def unitree_go1_rough_env_cfg(
   for reward_name in ["foot_clearance", "foot_slip"]:
     cfg.rewards[reward_name].params["asset_cfg"].site_names = site_names
 
-  cfg.rewards["body_ang_vel"].weight = 0.0
-  cfg.rewards["angular_momentum"].weight = 0.0
+  cfg.rewards["body_ang_vel"].weight = -1e-4
+  cfg.rewards["angular_momentum"].weight = -1e-4
   cfg.rewards["air_time"].weight = 0.0
   cfg.rewards["joint_vel_l2"] = RewardTermCfg(func=mdp.joint_vel_l2, weight=-1e-5)
   cfg.rewards["joint_acc_l2"] = RewardTermCfg(func=mdp.joint_acc_l2, weight=-1e-7)
