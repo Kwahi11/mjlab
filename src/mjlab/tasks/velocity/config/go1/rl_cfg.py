@@ -1,5 +1,7 @@
 """RL configuration for Unitree Go1 velocity task."""
 
+from functools import partial
+
 from mjlab.rl import (
   RslRlModelCfg,
   RslRlOnPolicyRunnerCfg,
@@ -7,7 +9,9 @@ from mjlab.rl import (
 )
 
 
-def unitree_go1_ppo_runner_cfg() -> RslRlOnPolicyRunnerCfg:
+def unitree_go1_ppo_runner_cfg(
+  max_iterations: int = 10_000,
+) -> RslRlOnPolicyRunnerCfg:
   """Create RL runner configuration for Unitree Go1 velocity task."""
   return RslRlOnPolicyRunnerCfg(
     actor=RslRlModelCfg(
@@ -42,5 +46,10 @@ def unitree_go1_ppo_runner_cfg() -> RslRlOnPolicyRunnerCfg:
     experiment_name="go1_velocity",
     save_interval=50,
     num_steps_per_env=24,
-    max_iterations=10_000,
+    max_iterations=max_iterations,
   )
+
+
+unitree_go1_flat_ppo_runner_cfg = partial(
+  unitree_go1_ppo_runner_cfg, max_iterations=1_500
+)
