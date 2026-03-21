@@ -220,9 +220,9 @@ def unitree_g1_flat_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     params={
       "command_name": "twist",
       "velocity_stages": [
-        {"step": 0, "lin_vel_x": (-1.0, 1.0), "ang_vel_z": (-0.5, 0.5)},
-        {"step": 5000 * 24, "lin_vel_x": (-1.5, 2.0), "ang_vel_z": (-0.7, 0.7)},
-        {"step": 10000 * 24, "lin_vel_x": (-2.0, 3.0)},
+        {"step": 0, "lin_vel_x": (-1.0, 1.0)},
+        {"step": 5000 * 24, "lin_vel_x": (-1.5, 2.0), "ang_vel_z": (-1.5, 1.5)},
+        {"step": 10000 * 24, "lin_vel_x": (-2.0, 3.0), "ang_vel_z": (-2.0, 2.0)},
       ],
     },
   )
@@ -231,6 +231,6 @@ def unitree_g1_flat_run_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     twist_cmd = cfg.commands["twist"]
     assert isinstance(twist_cmd, UniformVelocityCommandCfg)
     twist_cmd.ranges.lin_vel_x = (-2.0, 3.0)
-    twist_cmd.ranges.ang_vel_z = (-0.7, 0.7)
+    twist_cmd.ranges.ang_vel_z = (-2.0, 2.0)
 
   return cfg
