@@ -35,7 +35,7 @@ def unitree_go1_rough_env_cfg(
   """Create Unitree Go1 rough terrain velocity configuration."""
   cfg = make_velocity_env_cfg()
 
-  cfg.sim.njmax = 100
+  cfg.sim.njmax = 120
   cfg.sim.nconmax = 20
 
   cfg.sim.mujoco.impratio = 10
