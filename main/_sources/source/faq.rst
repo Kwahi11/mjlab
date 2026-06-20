@@ -42,6 +42,27 @@ Not all CUDA versions are supported by MuJoCo Warp.
 - **Recommended**: CUDA **12.4+** (for conditional execution support in CUDA
   graphs).
 
+How do I run on CPU without touching the GPU?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Passing ``device="cpu"`` puts all mjlab computation on the CPU, but it does
+**not** stop Warp from initializing the GPU. The first time Warp's runtime
+comes up, it eagerly enumerates and creates a CUDA context on **every**
+visible device, regardless of which device you requested. So on a machine
+with a visible GPU, a ``device="cpu"`` run still claims VRAM.
+
+This happens inside Warp and cannot be prevented from Python once the
+package is imported. To keep the process entirely off the GPU, hide the
+devices from CUDA before launching:
+
+.. code-block:: bash
+
+   CUDA_VISIBLE_DEVICES="" uv run train.py ...
+
+With no visible CUDA devices, Warp initializes CPU-only and never allocates
+on the GPU. See `issue #949
+<https://github.com/mujocolab/mjlab/issues/949>`_ for background.
+
 Performance
 -----------
 
@@ -233,6 +254,35 @@ This is a known limitation being tracked in
 
 Until determinism is implemented upstream, mjlab training runs will not be
 perfectly reproducible even when setting a seed.
+
+My XML ``<option>`` flags are not taking effect
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you set simulation options like ``<flag contact="disable"/>`` in your
+entity XML, they will be silently ignored. This is because mjlab composes
+scenes by attaching entity specs into a parent scene spec using
+``MjSpec.attach()``, which does not propagate ``<option>`` settings from
+the child to the parent. This is a MuJoCo design decision: there is no
+sensible way to merge engine options (timestep, gravity, solver settings,
+etc.) across multiple attached models.
+
+To configure simulation options, use :class:`~mjlab.sim.sim.MujocoCfg` in
+your task's Python config:
+
+.. code-block:: python
+
+   from mjlab.sim.sim import MujocoCfg, SimulationCfg
+
+   sim=SimulationCfg(
+       mujoco=MujocoCfg(
+           disableflags=("contact",),
+           # timestep=0.01, gravity=(0, 0, -9.81), etc.
+       ),
+   )
+
+``MujocoCfg`` applies options directly to the compiled model, so they
+always take effect. mjlab will emit a warning if it detects non-default
+``<option>`` fields on an attached entity spec.
 
 Rendering & Visualization
 -------------------------

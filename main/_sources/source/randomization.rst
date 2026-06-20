@@ -230,6 +230,41 @@ and ``dr.body_ipos`` are the same function).
      - ``mat_rgba``
      - Material RGBA color (tints textures)
      -
+   * - ``dr.mat_emission``
+     - ``mat_emission``
+     - Self-illumination multiplier
+     - Used by MuJoCo Warp RGB rendering
+   * - ``dr.mat_specular``
+     - ``mat_specular``
+     - Specular reflection strength in ``[0, 1]``
+     - Scales the MuJoCo Warp RGB specular component
+   * - ``dr.mat_shininess``
+     - ``mat_shininess``
+     - Surface shininess in ``[0, 1]``
+     - Used by MuJoCo Warp RGB rendering
+   * - ``dr.mat_texrepeat``
+     - ``mat_texrepeat``
+     - Texture repeat in the S/T directions
+     - Only affects textured materials; values should stay positive
+
+.. rubric:: Contact pair fields
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 18 34 20
+
+   * - Function
+     - MuJoCo field
+     - Description
+     - Notes
+   * - ``dr.pair_friction``
+     - ``pair_friction``
+     - Per-pair friction override ``[tangent1, tangent2, spin, roll1, roll2]``
+     - Default axis: 0 (tangent1, requires ``condim >= 3``). Use
+       ``isotropic=True`` to mirror tangent2 = tangent1 (and roll2 = roll1).
+       Overrides per-geom friction for explicitly defined
+       `<contact><pair> <https://mujoco.readthedocs.io/en/stable/XMLreference.html#contact-pair>`_
+       elements. See :ref:`dr-pair-friction`.
 
 .. rubric:: Tendon fields
 
@@ -280,23 +315,19 @@ model.
        See :ref:`dr-pseudo-inertia` for details.
    * - ``dr.pd_gains``
      - Randomizes stiffness (kp) and damping (kd) together. For
-       ``BuiltinPositionActuator`` and ``XmlPositionActuator`` it writes to
+       ``BuiltinPositionActuator`` and ``XmlActuator`` it writes to
        ``actuator_gainprm`` and ``actuator_biasprm``. For
        ``IdealPdActuator`` it sets gains on the entity directly. All three
-       can be wrapped with ``DelayedActuator``.
+       support inline delay fields.
    * - ``dr.effort_limits``
      - Randomizes actuator force range (``actuator_forcerange``). For
        ``IdealPdActuator`` also updates the entity's internal force limit.
-       Supports ``BuiltinPositionActuator``, ``XmlPositionActuator``, and
+       Supports ``BuiltinPositionActuator``, ``XmlActuator``, and
        ``IdealPdActuator``.
    * - ``dr.encoder_bias``
      - Adds a fixed per-joint bias to position readings, simulating encoder
        calibration errors. Writes to ``entity.data.encoder_bias``, not the
        MuJoCo model.
-   * - ``dr.sync_actuator_delays``
-     - Samples a single lag value per environment and applies it to all
-       ``DelayedActuator`` instances on the entity, ensuring consistent
-       delay across joints.
 
 
 .. _dr-pseudo-inertia:
@@ -581,6 +612,125 @@ Plane, heightfield, mesh, and SDF geoms are not supported because their bounds
 come from vertex data or are infinite, not derivable from ``geom_size``.
 
 
+.. _dr-pair-friction:
+
+``pair_friction`` and isotropic friction
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``pair_friction`` stores five friction coefficients per contact pair:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 20 20 50
+
+   * - Index
+     - Name
+     - Active when
+     - Meaning
+   * - 0
+     - tangent1
+     - ``condim >= 3``
+     - Sliding friction along the first tangent axis of the contact frame
+   * - 1
+     - tangent2
+     - ``condim >= 3``
+     - Sliding friction along the second tangent axis
+   * - 2
+     - spin
+     - ``condim >= 4``
+     - Torsional friction around the contact normal
+   * - 3
+     - roll1
+     - ``condim = 6``
+     - Rolling friction around the first tangent axis
+   * - 4
+     - roll2
+     - ``condim = 6``
+     - Rolling friction around the second tangent axis
+
+MuJoCo's standard geom friction is a 3-vector ``[tangential, torsional,
+rolling]`` that is automatically expanded to the 5-vector by replicating the
+tangential coefficient into tangent1 and tangent2, and the rolling coefficient
+into roll1 and roll2. For pair overrides the five values are stored
+independently, so the symmetry must be maintained explicitly. Pass
+``isotropic=True`` to enforce this: after sampling, tangent2 is overwritten
+with tangent1, and roll2 is overwritten with roll1 whenever axes 3 or 4 are
+targeted.
+
+**Recommendations by condim.**
+
+**condim = 3.** Both tangent axes are active. Sample tangent1 and set tangent2 equal to it with ``isotropic=True``. Pass
+``shared_random=True`` so that all pairs selected by ``asset_cfg`` receive the
+same sampled value within each environment (environments still get independent
+values from one another):
+
+.. code-block:: python
+
+   dr.pair_friction(
+       env,
+       env_ids=None,
+       ranges=(0.4, 1.0),
+       operation="abs",
+       asset_cfg=SceneEntityCfg("robot", pair_names=("foot1_floor", "foot2_floor")),
+       axes=[0],           # sample tangent1
+       shared_random=True, # all pairs selected by asset_cfg share one value per env
+       isotropic=True,     # tangent2 = tangent1
+   )
+
+**condim = 4.** Spin (axis 2) is additionally active. Randomize sliding
+friction as above. If spin should also be randomized, do so in a separate
+call with its own range:
+
+.. code-block:: python
+
+   dr.pair_friction(
+       env,
+       env_ids=None,
+       ranges=(0.4, 1.0),
+       operation="abs",
+       asset_cfg=SceneEntityCfg("robot", pair_names=("foot1_floor", "foot2_floor")),
+       axes=[0],
+       shared_random=True,
+       isotropic=True,
+   )
+   dr.pair_friction(
+       env,
+       env_ids=None,
+       ranges=(0.003, 0.01),
+       operation="abs",
+       asset_cfg=SceneEntityCfg("robot", pair_names=("foot1_floor", "foot2_floor")),
+       axes=[2],
+       shared_random=True,
+   )
+
+**condim = 6.** All five axes are active. Randomize sliding friction as above.
+To also randomize rolling friction symmetrically, target axis 3 with
+``isotropic=True`` so that roll2 is set equal to roll1:
+
+.. code-block:: python
+
+   dr.pair_friction(
+       env,
+       env_ids=None,
+       ranges=(0.4, 1.0),
+       operation="abs",
+       asset_cfg=SceneEntityCfg("robot", pair_names=("foot1_floor", "foot2_floor")),
+       axes=[0],
+       shared_random=True,
+       isotropic=True,
+   )
+   dr.pair_friction(
+       env,
+       env_ids=None,
+       ranges=(0.0001, 0.001),
+       operation="abs",
+       asset_cfg=SceneEntityCfg("robot", pair_names=("foot1_floor", "foot2_floor")),
+       axes=[3],
+       shared_random=True,
+       isotropic=True,  # roll2 = roll1
+   )
+
+
 Fields without ``dr`` functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -616,11 +766,6 @@ do not have one yet. They will be added as demand arises.
      - ``actuator_dynprm``, ``actuator_gear``,
        ``actuator_ctrlrange``, ``actuator_actrange``
      - ``pd_gains`` and ``effort_limits`` cover common cases.
-   * - Material
-     - ``mat_texrepeat``
-     - Continuous per-world field. Material-level entity indexing
-       is now supported (see ``dr.mat_rgba``), but ``dr.mat_texrepeat``
-       is not yet implemented.
 
 Better as custom code
 """""""""""""""""""""
@@ -651,8 +796,8 @@ choices. Write a custom event term instead (see
      - ``geom_margin``, ``geom_gap``, ``pair_margin``, ``pair_gap``
      - Interact with solver parameters above.
    * - Pair overrides
-     - ``pair_friction``, ``eq_data``
-     - Per-pair friction and constraint anchor overrides.
+     - ``eq_data``
+     - Constraint anchor overrides.
    * - Spring reference
      - ``qpos_spring``
      - Coupled with ``qpos0``; randomizing independently is
@@ -1184,7 +1329,8 @@ The native viewer syncs per-world model fields from the GPU to a local
 toggles then work correctly against the randomized model:
 
 - Geom appearance (``geom_rgba``, ``geom_size``, ``geom_pos``, ``geom_quat``)
-- Material color (``mat_rgba``): tints textured surfaces
+- Material appearance (``mat_rgba``, ``mat_emission``, ``mat_specular``,
+  ``mat_shininess``, ``mat_texrepeat``)
 - Body and site poses (``body_pos``, ``body_quat``, ``body_ipos``,
   ``site_pos``, ``site_quat``)
 - Inertia (``body_inertia``, ``body_iquat``, ``body_mass``): press ``I``
