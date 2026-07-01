@@ -8,6 +8,28 @@ Upcoming version (not yet released)
 Added
 ^^^^^
 
+- Added ``MeshCfg``, a spec editor that matches mesh assets by name and edits
+  their asset-level attributes. The first attribute is ``maxhullvert``, which
+  caps the collision convex hull's vertex count to lower narrowphase cost.
+
+Changed
+^^^^^^^
+
+Fixed
+^^^^^
+
+- Fixed ``mdp.bad_orientation`` returning NaN when float32 rounding in
+  ``quat_apply_inverse`` pushed the projected-gravity z-component slightly
+  outside ``[-1, 1]``, making ``torch.acos`` return NaN and silently
+  suppressing the termination for flipped robots. The argument is now clamped
+  to ``[-1, 1]``.
+
+Version 1.5.0 (June 28, 2026)
+-----------------------------
+
+Added
+^^^^^
+
 - Added ``reduce="max"`` to ``MetricsTermCfg`` for reporting episode-peak values
   (e.g. peak power, peak contact force) without needing stateful wrapper classes.
 - Added ``BuiltinDcMotorActuator``, a native MuJoCo ``<dcmotor>`` wrapper.
@@ -26,6 +48,15 @@ Changed
 ^^^^^^^
 
 - Bumped ``rsl-rl-lib`` from 5.2.0 to 5.4.0.
+- Bumped ``mujoco`` and ``mujoco-warp`` to 3.10, both pinned from PyPI. The
+  ``py.mujoco.org`` nightly index and the ``mujoco-warp`` git pin are dropped, so
+  resolution no longer breaks when nightly wheels are garbage-collected.
+
+  .. warning::
+
+     ``SimulationCfg.ls_parallel`` is deprecated and now ignored, since parallel
+     linesearch was removed upstream in MuJoCo Warp. Setting it emits a
+     ``DeprecationWarning``; remove it from any ``SimulationCfg`` you construct.
 - Curriculum-mode terrain difficulty is now deterministic across rows
   and reaches the configured ``difficulty_range`` endpoints
   (:issue:`1027`).
@@ -51,7 +82,8 @@ Fixed
   installed mujoco version. CI now regenerates them and fails if they are
   stale, so they stay in sync going forward. Run ``make stubs`` to update them
   (:issue:`1048`).
-- Fixed ``select_gpus`` crashing when ``CUDA_VISIBLE_DEVICES`` contains MIG UUIDs instead of numeric indices.
+- Fixed ``select_gpus`` crashing when ``CUDA_VISIBLE_DEVICES`` contains MIG
+  UUIDs instead of numeric indices.
 - Fixed pyramid-stairs terrains (``BoxPyramidStairsTerrainCfg``,
   ``BoxInvertedPyramidStairsTerrainCfg``, and ``BoxOpenStairsTerrainCfg``)
   leaving an empty, geometry-free border at difficulty 0, where the step
@@ -77,6 +109,10 @@ Fixed
   platform library not loaded`` on headless Linux hosts that don't pre-set
   ``MUJOCO_GL``. The default is now applied in ``mjlab/__init__.py`` (Linux
   only) so it takes effect before mujoco's GL backend selection runs.
+- Fixed motion tracking re-anchoring to a stale robot pose after a mid-episode
+  motion resample. ``MotionCommand._update_command`` now calls ``sim.forward()``
+  after resampling so relative body poses read the post-teleport state
+  (:issue:`1068`).
 
 Version 1.4.0 (May 26, 2026)
 ----------------------------
