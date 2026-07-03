@@ -74,11 +74,11 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
   ##
 
   actor_terms = {
-    "base_lin_vel": ObservationTermCfg(
-      func=mdp.builtin_sensor,
-      params={"sensor_name": "robot/imu_lin_vel"},
-      noise=Unoise(n_min=-0.5, n_max=0.5),
-    ),
+    # "base_lin_vel": ObservationTermCfg(
+    #   func=mdp.builtin_sensor,
+    #   params={"sensor_name": "robot/imu_lin_vel"},
+    #   noise=Unoise(n_min=-0.5, n_max=0.5),
+    # ),
     "base_ang_vel": ObservationTermCfg(
       func=mdp.builtin_sensor,
       params={"sensor_name": "robot/imu_ang_vel"},
@@ -131,6 +131,11 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
     "foot_contact_forces": ObservationTermCfg(
       func=mdp.foot_contact_forces,
       params={"sensor_name": "feet_ground_contact"},
+    ),
+    "base_lin_vel": ObservationTermCfg(
+      func=mdp.builtin_sensor,
+      params={"sensor_name": "robot/imu_lin_vel"},
+      noise=Unoise(n_min=-0.5, n_max=0.5),
     ),
   }
 
@@ -185,9 +190,9 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
       heading_control_stiffness=0.5,
       debug_vis=True,
       ranges=UniformVelocityCommandCfg.Ranges(
-        lin_vel_x=(-1.0, 1.0),
+        lin_vel_x=(-1.0, 2.0),
         lin_vel_y=(-1.0, 1.0),
-        ang_vel_z=(-0.5, 0.5),
+        ang_vel_z=(-1.0, 1.0),
         heading=(-math.pi, math.pi),
       ),
     )
@@ -205,7 +210,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         "pose_range": {
           "x": (-0.5, 0.5),
           "y": (-0.5, 0.5),
-          "z": (0.01, 0.05),
+          "z": (0.01, 0.02),
           "yaw": (-3.14, 3.14),
         },
         "velocity_range": {},
@@ -253,15 +258,15 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         "bias_range": (-0.015, 0.015),
       },
     ),
-    "base_com": EventTermCfg(
+    "base_com": EventTermCfg(   ##随机挪一挪躯干重心”，让训练更抗真实误差
       mode="startup",
       func=dr.body_com_offset,
       params={
         "asset_cfg": SceneEntityCfg("robot", body_names=()),  # Set per-robot.
         "operation": "add",
         "ranges": {
-          0: (-0.025, 0.025),
-          1: (-0.025, 0.025),
+          0: (-0.05, 0.05),
+          1: (-0.05, 0.05),
           2: (-0.03, 0.03),
         },
       },
@@ -285,7 +290,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
     ),
     "upright": RewardTermCfg(
       func=mdp.upright,
-      weight=1.0,
+      weight=1.5,
       params={
         "std": math.sqrt(0.2),
         "asset_cfg": SceneEntityCfg("robot", body_names=()),  # Set per-robot.
@@ -300,7 +305,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         "std_standing": {},  # Set per-robot.
         "std_walking": {},  # Set per-robot.
         "std_running": {},  # Set per-robot.
-        "walking_threshold": 0.05,
+        "walking_threshold": 0.1,
         "running_threshold": 1.5,
       },
     ),
@@ -314,6 +319,7 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
       weight=0.0,  # Override per-robot
       params={"sensor_name": "robot/root_angmom"},
     ),
+    "is_terminated": RewardTermCfg(func=mdp.is_terminated, weight=-200.0),
     "dof_pos_limits": RewardTermCfg(func=mdp.joint_pos_limits, weight=-1.0),
     "action_rate_l2": RewardTermCfg(func=mdp.action_rate_l2, weight=-0.1),
     "air_time": RewardTermCfg(
@@ -326,6 +332,18 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         "command_name": "twist",
         "command_threshold": 0.5,
       },
+    ),
+    "foot_gait": RewardTermCfg(
+      func=mdp.feet_gait,
+      weight=0.5,
+      params={
+        "period": 0.6,
+        "offset": [0.0, 0.5],
+        "threshold": 0.56,
+        "command_threshold": 0.1,
+        "command_name": "twist",
+        "sensor_name": "feet_ground_contact",
+      }
     ),
     "foot_clearance": RewardTermCfg(
       func=mdp.feet_clearance,
@@ -368,6 +386,15 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
         "command_threshold": 0.05,
       },
     ),
+    "stand_still": RewardTermCfg(
+      func=mdp.stand_still,
+      weight=-1.0,
+      params={
+        "command_name": "twist",
+        "command_threshold": 0.1,
+        "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+      },
+    ),
   }
 
   ##
@@ -400,9 +427,9 @@ def make_velocity_env_cfg() -> ManagerBasedRlEnvCfg:
       params={
         "command_name": "twist",
         "velocity_stages": [
-          {"step": 0, "lin_vel_x": (-1.0, 1.0), "ang_vel_z": (-0.5, 0.5)},
-          {"step": 5000 * 24, "lin_vel_x": (-1.5, 2.0), "ang_vel_z": (-0.7, 0.7)},
-          {"step": 10000 * 24, "lin_vel_x": (-2.0, 3.0)},
+          {"step": 0, "lin_vel_x": (-0.5, 1.0), "lin_vel_y": (-0.5, 0.5),"ang_vel_z": (-1.0, 1.0)},
+          {"step": 5000 * 24, "lin_vel_x": (-1.0, 2.0), "ang_vel_z": (-1.0, 1.0)},
+          # {"step": 10000 * 24, "lin_vel_x": (-2.0, 3.0)},
         ],
       },
     ),

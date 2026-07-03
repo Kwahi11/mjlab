@@ -1,8 +1,8 @@
-"""Unitree G1 velocity environment configurations."""
+"""Unitree G1 23DoF velocity environment configurations."""
 
 from mjlab.asset_zoo.robots import (
-  G1_ACTION_SCALE,
-  get_g1_robot_cfg,
+  G1_23DOF_ACTION_SCALE,
+  get_g1_23dof_robot_cfg,
 )
 from mjlab.envs import ManagerBasedRlEnvCfg
 from mjlab.envs import mdp as envs_mdp
@@ -22,17 +22,16 @@ from mjlab.tasks.velocity.mdp import UniformVelocityCommandCfg
 from mjlab.tasks.velocity.velocity_env_cfg import make_velocity_env_cfg
 
 
-def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
-  """Create Unitree G1 rough terrain velocity configuration."""
+def unitree_g1_23dof_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
+  """Create Unitree G1 23DoF rough terrain velocity configuration."""
   cfg = make_velocity_env_cfg()
 
   cfg.sim.mujoco.ccd_iterations = 500
   cfg.sim.contact_sensor_maxmatch = 500
   cfg.sim.nconmax = 70
 
-  cfg.scene.entities = {"robot": get_g1_robot_cfg()}
+  cfg.scene.entities = {"robot": get_g1_23dof_robot_cfg()}
 
-  # Set raycast sensor frame to G1 pelvis.
   for sensor in cfg.scene.sensors or ():
     if sensor.name == "terrain_scan":
       assert isinstance(sensor, RayCastSensorCfg)
@@ -44,7 +43,6 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     f"{side}_foot{i}_collision" for side in ("left", "right") for i in range(1, 8)
   )
 
-  # Wire foot height scan to per-foot sites.
   for sensor in cfg.scene.sensors or ():
     if sensor.name == "foot_height_scan":
       assert isinstance(sensor, TerrainHeightSensorCfg)
@@ -85,7 +83,7 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
 
   joint_pos_action = cfg.actions["joint_pos"]
   assert isinstance(joint_pos_action, JointPositionActionCfg)
-  joint_pos_action.scale = G1_ACTION_SCALE
+  joint_pos_action.scale = G1_23DOF_ACTION_SCALE
 
   cfg.viewer.body_name = "torso_link"
 
@@ -96,52 +94,47 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   cfg.events["foot_friction"].params["asset_cfg"].geom_names = geom_names
   cfg.events["base_com"].params["asset_cfg"].body_names = ("torso_link",)
 
-  # Rationale for std values:
-  # - Knees/hip_pitch get the loosest std to allow natural leg bending during stride.
-  # - Hip roll/yaw stay tighter to prevent excessive lateral sway and keep gait stable.
-  # - Ankle roll is very tight for balance; ankle pitch looser for foot clearance.
-  # - Waist roll/pitch stay tight to keep the torso upright and stable.
-  # - Shoulders/elbows get moderate freedom for natural arm swing during walking.
-  # - Wrists are loose (0.3) since they don't affect balance much.
-  # Running values are ~1.5-2x walking values to accommodate larger motion range.
-  cfg.rewards["pose"].params["std_standing"] = {".*": 0.05}
+  cfg.rewards["pose"].params["std_standing"] = {
+    r".*hip_pitch.*": 0.05,
+    r".*hip_roll.*": 0.05,
+    r".*hip_yaw.*": 0.05,
+    r".*knee.*": 0.08,
+    r".*ankle_pitch.*": 0.05,
+    r".*ankle_roll.*": 0.05,
+    r".*waist_yaw.*": 0.05,
+    r".*shoulder_pitch.*": 0.08,
+    r".*shoulder_roll.*": 0.08,
+    r".*shoulder_yaw.*": 0.08,
+    r".*elbow.*": 0.1,
+    r".*wrist_roll.*": 0.1,
+  }
   cfg.rewards["pose"].params["std_walking"] = {
-    # Lower body.
-    r".*hip_pitch.*": 0.3,
+    r".*hip_pitch.*": 0.25,
     r".*hip_roll.*": 0.15,
     r".*hip_yaw.*": 0.15,
-    r".*knee.*": 0.35,
-    r".*ankle_pitch.*": 0.25,
+    r".*knee.*": 0.3,
+    r".*ankle_pitch.*": 0.2,
     r".*ankle_roll.*": 0.1,
-    # Waist.
-    r".*waist_yaw.*": 0.2,
-    r".*waist_roll.*": 0.08,
-    r".*waist_pitch.*": 0.1,
-    # Arms.
+    r".*waist_yaw.*": 0.15,
     r".*shoulder_pitch.*": 0.15,
     r".*shoulder_roll.*": 0.15,
     r".*shoulder_yaw.*": 0.1,
     r".*elbow.*": 0.15,
-    r".*wrist.*": 0.3,
+    r".*wrist_roll.*": 0.15,
   }
   cfg.rewards["pose"].params["std_running"] = {
-    # Lower body.
-    r".*hip_pitch.*": 0.5,
+    r".*hip_pitch.*": 0.4,
     r".*hip_roll.*": 0.2,
     r".*hip_yaw.*": 0.2,
-    r".*knee.*": 0.6,
-    r".*ankle_pitch.*": 0.35,
+    r".*knee.*": 0.5,
+    r".*ankle_pitch.*": 0.3,
     r".*ankle_roll.*": 0.15,
-    # Waist.
-    r".*waist_yaw.*": 0.3,
-    r".*waist_roll.*": 0.08,
-    r".*waist_pitch.*": 0.2,
-    # Arms.
-    r".*shoulder_pitch.*": 0.5,
+    r".*waist_yaw.*": 0.2,
+    r".*shoulder_pitch.*": 0.3,
     r".*shoulder_roll.*": 0.2,
     r".*shoulder_yaw.*": 0.15,
-    r".*elbow.*": 0.35,
-    r".*wrist.*": 0.3,
+    r".*elbow.*": 0.25,
+    r".*wrist_roll.*": 0.2,
   }
 
   cfg.rewards["upright"].params["asset_cfg"].body_names = ("torso_link",)
@@ -160,9 +153,7 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     params={"sensor_name": self_collision_cfg.name, "force_threshold": 10.0},
   )
 
-  # Apply play mode overrides.
   if play:
-    # Effectively infinite episode length.
     cfg.episode_length_s = int(1e9)
     cfg.sim.nconmax = None
 
@@ -186,21 +177,19 @@ def unitree_g1_rough_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   return cfg
 
 
-def unitree_g1_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
-  """Create Unitree G1 flat terrain velocity configuration."""
-  cfg = unitree_g1_rough_env_cfg(play=play)
+def unitree_g1_23dof_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
+  """Create Unitree G1 23DoF flat terrain velocity configuration."""
+  cfg = unitree_g1_23dof_rough_env_cfg(play=play)
 
   cfg.sim.njmax = 300
   cfg.sim.mujoco.ccd_iterations = 50
   cfg.sim.contact_sensor_maxmatch = 64
   cfg.sim.nconmax = None
 
-  # Switch to flat terrain.
   assert cfg.scene.terrain is not None
   cfg.scene.terrain.terrain_type = "plane"
   cfg.scene.terrain.terrain_generator = None
 
-  # Remove raycast sensor and height scan (no terrain to scan).
   cfg.scene.sensors = tuple(
     s for s in (cfg.scene.sensors or ()) if s.name != "terrain_scan"
   )
@@ -208,8 +197,6 @@ def unitree_g1_flat_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
   del cfg.observations["critic"].terms["height_scan"]
 
   cfg.terminations.pop("out_of_terrain_bounds", None)
-
-  # Disable terrain curriculum (not present in play mode since rough clears all).
   cfg.curriculum.pop("terrain_levels", None)
 
   if play:

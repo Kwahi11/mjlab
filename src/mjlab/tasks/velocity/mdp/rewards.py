@@ -267,6 +267,32 @@ def feet_clearance(
       cost = cost * active
   return cost
 
+def feet_gait(
+        env: ManagerBasedRlEnv,
+        period: float,
+        offset: list[float],
+        threshold: float,
+        command_threshold: float,
+        command_name: str,
+        sensor_name: str,
+) -> torch.Tensor:
+    sensor: ContactSensor = env.scene[sensor_name]
+    is_contact = sensor.data.current_contact_time > 0
+    global_phase = ((env.episode_length_buf * env.step_dt) / period).unsqueeze(1)
+    offsets = torch.as_tensor(offset, device=env.device, dtype=global_phase.dtype).view(1, -1)
+    leg_phase = (global_phase + offsets) % 1.0
+    is_stance = (leg_phase < threshold)
+    reward = (is_stance == is_contact).float().mean(dim=1)
+    if command_name is not None:
+        command = env.command_manager.get_command(command_name)
+        if command is not None:
+            linear_norm = torch.norm(command[:, :2], dim=1)
+            angular_norm = torch.abs(command[:, 2])
+            total_command = linear_norm + angular_norm
+            scale = (total_command > command_threshold).float()
+            reward *= scale
+    return reward
+
 
 class feet_swing_height:
   """Penalize deviation from target swing height, evaluated at landing."""
@@ -464,3 +490,23 @@ class variable_posture:
     error_squared = torch.square(current_joint_pos - desired_joint_pos)
 
     return torch.exp(-torch.mean(error_squared / (std**2), dim=1))
+
+
+def stand_still(
+        env: ManagerBasedRlEnv,
+        command_name: str,
+        command_threshold: float = 0.1,
+        asset_cfg: SceneEntityCfg = _DEFAULT_ASSET_CFG
+) -> torch.Tensor:
+    asset: Entity = env.scene[asset_cfg.name]
+    diff_angle = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    reward = torch.sum(torch.square(diff_angle), dim=1)
+    if command_name is not None:
+        command = env.command_manager.get_command(command_name)
+        if command is not None:
+            linear_norm = torch.norm(command[:, :2], dim=1)
+            angular_norm = torch.abs(command[:, 2])
+            total_command = linear_norm + angular_norm
+            scale = (total_command <= command_threshold).float()
+            reward *= scale
+    return reward
